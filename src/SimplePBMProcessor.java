@@ -1,4 +1,6 @@
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class SimplePBMProcessor {
 
@@ -85,12 +87,56 @@ public class SimplePBMProcessor {
         }
     }
 
-    public static void main(String[] args) {
-        // Пример за четене на PBM файл
-        readP4("example.pbm");
+    public static void makeNegativeP1(String filename) {
+        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("P1") || line.startsWith("#") || line.matches("\\d+ \\d+")) {
+                    System.out.println(line); // Принтираме хедъра и коментарите без промяна
+                } else {
+                    // За редовете с данни, инвертираме всеки символ
+                    line = line.chars()
+                            .mapToObj(c -> c == '0' ? "1" : c == '1' ? "0" : Character.toString((char) c))
+                            .reduce("", String::concat);
+                    System.out.println(line);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Възникна грешка при четенето на файла: " + e.getMessage());
+        }
+    }
+    public static void rotateP1RightAndPrint(String filename) {
+        ArrayList<String> lines = new ArrayList<>();
+        ArrayList<char[]> imageData = new ArrayList<>();
+        int width = 0, height = 0;
 
-        // Пример за създаване на PBM файл
-        String imageData = "0 0 0 0 0\n0 1 1 1 0\n0 1 0 1 0\n0 0 0 0 0";
-        createPBM("newExample.pbm", 5, 4, imageData);
+        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("P1")) {
+                    System.out.println(line); // Печат на магическия номер
+                } else if (line.startsWith("#")) {
+                    System.out.println(line); // Печат на коментари
+                } else if (line.matches("\\d+ \\d+")) {
+                    String[] dimensions = line.split("\\s+");
+                    width = Integer.parseInt(dimensions[0]);
+                    height = Integer.parseInt(dimensions[1]);
+                    System.out.println(height + " " + width); // Обменени размери за завъртане
+                } else {
+                    imageData.add(line.replace(" ", "").toCharArray()); // Преобразуване и добавяне към списъка
+                }
+            }
+
+            // Завъртане и печатане на изображението
+            for (int col = 0; col < width; col++) {
+                for (int row = height - 1; row >= 0; row--) {
+                    System.out.print(imageData.get(row)[col] + " ");
+                }
+                System.out.println();
+            }
+
+        } catch (IOException e) {
+            System.out.println("Възникна грешка при четенето на файла: " + e.getMessage());
+        }
     }
 }
