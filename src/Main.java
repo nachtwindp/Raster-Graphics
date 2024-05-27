@@ -1,45 +1,170 @@
 import java.util.*;
 
+
 public class Main {
-    private static String currentImage = null;
     private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-
         HashMap<String, Session> sessions = new HashMap<>();
-        String current_session_id = genUUID();
-        sessions.put(current_session_id, new Session(current_session_id));
+        String current_session_id = null;
 
         while (true) {
             System.out.println("\nМеню:");
-            System.out.println("\nОтвори файл (add <image>) . Позволени формати: PBM, PPM, PGM");
-            System.out.println("\nЗавърти файловете в сегашната сесия наляво (rotate <direction>)");
+            System.out.println("1. Създай нова сесия и зареди файл (load <image>)");
+            System.out.println("2. Добави файл към текущата сесия (add <image>)");
+            System.out.println("3. Завърти файловете в сегашната сесия наляво (rotate left)");
+            System.out.println("4. Завърти файловете в сегашната сесия надясно (rotate right)");
+            System.out.println("5. Превърни файловете в негатив (negative)");
+            System.out.println("6. Превърни файловете в монохром (monochrome)");
+            System.out.println("7. Превърни файловете в сив оттенък (grayscale)");
+            System.out.println("8. Запази файловете (save <prefix>)");
+            System.out.println("9. Показване на информация за сесията (info)");
+            System.out.println("10. Създай колаж (collage <direction> <image1> <image2> <outimage>)");
+            System.out.println("11. Отмени последната операция (undo)");
+            System.out.println("12. Смени сесията (switch)");
+            System.out.println("13. Изведи всички създадени сесии (printsession)");
+            System.out.println("14. Изход (exit)");
             System.out.print("Изберете опция: ");
 
             String[] params = scanner.nextLine().split(" ");
             OperationType operationType = OperationType.IDLE;
-            if (params[0].equals("rotate"))
-                operationType = OperationType.get(params[0] + params[1]);
-            else
-                operationType = OperationType.get(params[0]);
 
-            scanner.nextLine(); // Почиства новия ред след числото
-            sessions.get(current_session_id).apply(operationType);
-//            switch (operationType) {
-//                case ROTATE_LEFT:
-//                    sessions.get(current_session_id).rotateLeftFiles();
-//                    break;
-//                case 2:
-////                    ppmFileManipulationMenu(sessions);
-//                case 3:
-////                    pgmFileManipulationMenu(sessions);
-//                case 4:
-//                    System.out.println("Изход от програмата.");
-//                    scanner.close();
-//                    return;
-//                default:
-//                    System.out.println("Невалидна опция. Моля, опитайте отново.");
-//            }
+            if (params[0].equals("rotate") && params.length > 1) {
+                operationType = OperationType.get(params[0] + " " + params[1]);
+            }
+            else if (params[0].equals("collage") && params.length > 4)
+            {
+                Session.collageImages(params[1], params[params.length - 1], Arrays.copyOfRange(params, 2, params.length - 1));
+                continue;
+            }
+            else if (params[0].equals("switch") && params.length > 1)
+            {
+                operationType = OperationType.get(params[0]);
+            }
+            else
+            {
+                operationType = OperationType.get(params[0]);
+            }
+
+            switch (operationType) {
+                case OPEN_FILE:
+                    try {
+                        if (params.length > 1) {
+                            current_session_id = genUUID();
+                            Session newSession = new Session(current_session_id);
+                            sessions.put(current_session_id, newSession);
+                            newSession.openFile(params[1]);
+                            System.out.println("Сесия с ID: " + current_session_id + " стартирана.");
+                        } else {
+                            System.out.println("Моля, въведете валидно име на файл.");
+                        }
+                    }catch (Error e)
+                    {
+                        sessions.remove(current_session_id);
+                        if(!sessions.isEmpty())
+                            current_session_id = sessions.get(0).uuid;
+                        else
+                            current_session_id = null;
+                        System.out.println(e.getMessage());
+                    }
+                    break;
+                case ADD_FILE:
+                    if (params.length > 1 && current_session_id != null) {
+                        sessions.get(current_session_id).openFile(params[1]);
+                    } else {
+                        System.out.println("Моля, въведете валидно име на файл или стартирайте сесия.");
+                    }
+                    break;
+                case ROTATE_LEFT:
+                    if (current_session_id != null) {
+                        sessions.get(current_session_id).rotateLeftFiles();
+                    } else {
+                        System.out.println("Няма активна сесия.");
+                    }
+                    break;
+                case ROTATE_RIGHT:
+                    if (current_session_id != null) {
+                        sessions.get(current_session_id).rotateRightFiles();
+                    } else {
+                        System.out.println("Няма активна сесия.");
+                    }
+                    break;
+                case NEGATIVE:
+                    if (current_session_id != null) {
+                        sessions.get(current_session_id).makeNegativeFiles();
+                    } else {
+                        System.out.println("Няма активна сесия.");
+                    }
+                    break;
+                case MONOCHROME:
+                    if (current_session_id != null) {
+                        sessions.get(current_session_id).makeMonochromeFiles();
+                    } else {
+                        System.out.println("Няма активна сесия.");
+                    }
+                    break;
+                case GRAYSCALE:
+                    if (current_session_id != null) {
+                        sessions.get(current_session_id).makeGrayScaleFiles();
+                    } else {
+                        System.out.println("Няма активна сесия.");
+                    }
+                    break;
+                case SAVE_IMAGE:
+                    if (params.length > 1 && current_session_id != null) {
+                        sessions.get(current_session_id).saveFiles(params[1]);
+                    } else {
+                        System.out.println("Моля, въведете префикс за запазване на файла или стартирайте сесия.");
+                    }
+                    break;
+                case INFO:
+                    if (current_session_id != null) {
+                        sessions.get(current_session_id).printSessionInfo();
+                    } else {
+                        System.out.println("Няма активна сесия.");
+                    }
+                    break;
+                case UNDO:
+                    if (current_session_id != null) {
+                        sessions.get(current_session_id).undoLastOperation();
+                    } else {
+                        System.out.println("Няма активна сесия.");
+                    }
+                    break;
+                case SWITCH:
+                    if (current_session_id != null)
+                    {
+                        String searched_session = params[1].trim();
+                        if (sessions.containsKey(searched_session))
+                        {
+                            current_session_id = searched_session;
+                            System.out.println("Сесията е сменена на " + current_session_id);
+                        }
+                        else {
+                            System.out.println("Няма такава сесия");
+                        }
+                    }
+                    break;
+                case PRINTSESSION:
+                    if(current_session_id != null)
+                    {
+                        System.out.println("Текущи сесии:");
+                        sessions.forEach((key, value) -> { System.out.println(key + " "); });
+                    }
+                    else
+                    {
+                        System.out.println("Няма активни сесии");
+                    }
+                    break;
+                case EXIT:
+                    System.out.println("Изход от програмата.");
+                    scanner.close();
+                    return;
+                case IDLE:
+                default:
+                    System.out.println("Невалидна опция. Моля, опитайте отново.");
+                    break;
+            }
         }
     }
 
@@ -47,190 +172,3 @@ public class Main {
         return UUID.randomUUID().toString();
     }
 }
-
-//    private static void pbmFileManipulationMenu(Scanner scanner, Session session) {
-//        while (true) {
-//            System.out.println("\nМеню за манипулация на PBM файлове:");
-//            System.out.println("1. Четене на PBM файл");
-//            System.out.println("2. Създаване на PBM файл");
-//            System.out.println("3. Направете отрицателен цвят на PBM");
-//            System.out.println("4. Завъртете PBM на дясно");
-//            System.out.println("5. Завъртете PBM на наляво");
-//            System.out.println("6. Запазете промените в нов файл");
-//            System.out.println("7. Назад към главното меню");
-//            System.out.print("Изберете опция: ");
-//
-//            String choice = scanner.nextLine();
-//
-//            scanner.nextLine(); // Почиства новия ред след числото
-//            switch (choice) {
-//                case 1:
-//                    System.out.print("Въведете име на файл за четене: ");
-//                    String directory = scanner.nextLine();
-//                    session.openFile(directory);
-////                    System.out.println(session.files.); // Покажете началното състояние на изображението
-//                    break;
-//                case 2:
-//                    System.out.print("Въведете име на файл за създаване: ");
-//                    String filenameCreate = scanner.nextLine();
-//                    System.out.print("Въведете ширина: ");
-//                    int width = scanner.nextInt();
-//                    System.out.print("Въведете височина: ");
-//                    int height = scanner.nextInt();
-//                    scanner.nextLine(); // Почиства новия ред
-//                    System.out.println("Въведете данни за изображението (като текст с нов ред за всеки ред от изображението): ");
-//                    String imageData = "";
-//                    for (int i = 0; i < height; i++) {
-//                        imageData += scanner.nextLine() + "\n";
-//                    }
-//                    SimplePBMProcessor.createPBM(filenameCreate, width, height, imageData.trim());
-//                    break;
-//                case 3:
-//                    if (currentImage != null) {
-//                        currentImage = SimplePBMProcessor.makeNegativeP1String(currentImage);
-//                        System.out.println(currentImage); // Покажете промененото състояние
-//                    }
-//                    break;
-//                case 4:
-//                    if (currentImage != null) {
-//                        currentImage = SimplePBMProcessor.rotateP1Right(currentImage);
-//                        System.out.println(currentImage); // Покажете промененото състояние
-//                    }
-//                    break;
-//                case 5:
-//                    session.rotateLeftFiles();
-////                        System.out.println(currentImage); // Покажете промененото състояние
-//                    break;
-//                case 6:
-//                    if (currentImage != null) {
-//                        System.out.print("Въведете име на новия файл за запазване: ");
-//                        String newFilename = scanner.nextLine();
-//                        SimplePBMProcessor.saveImage(currentImage, newFilename);
-//                        System.out.println("Изображението е запазено като " + newFilename);
-//                    } else {
-//                        System.out.println("Няма текущи промени за запазване.");
-//                    }
-//                    break;
-//                case 7:
-//                    return;
-//                default:
-//                    System.out.println("Невалидна опция. Моля, опитайте отново.");
-//            }
-//        }
-//    }
-//    private static void ppmFileManipulationMenu(Scanner scanner) {
-//        while (true) {
-//            System.out.println("\nМеню за манипулация на PPM файлове:");
-//            System.out.println("1. Четене на PPM файл");
-//            System.out.println("2. Цветово преобръщане");
-//            System.out.println("3. Завъртане наляво на PPM изображение");
-//            System.out.println("4. Завъртане надясно на PPM изображение");
-//            System.out.println("5. Запазване на промените в нов файл");
-//            System.out.println("6. Назад към главното меню");
-//            System.out.print("Изберете опция: ");
-//
-//            int choice = scanner.nextInt();
-//            scanner.nextLine(); // Почиства новия ред след числото
-//
-//            switch (choice) {
-//                case 1:
-//                    System.out.print("Въведете име на файл за четене: ");
-//                    String filenameRead = scanner.nextLine();
-//                    currentImage = SimplePPMProcessor.readPPMAsString(filenameRead);
-//                    System.out.println(currentImage); // Покажете началното състояние на изображението
-//                    break;
-//                case 2:
-//                    if (currentImage != null) {
-//                        currentImage = SimplePPMProcessor.makeNegativeP3String(currentImage);
-//                        System.out.println(currentImage); // Покажете промененото състояние
-//                    }
-//                    break;
-//                case 3:
-//                    if (currentImage != null) {
-//                        currentImage = SimplePPMProcessor.rotatePPMLeft(currentImage);
-//                        System.out.println(currentImage); // Покажете промененото състояние
-//                    }
-//                    break;
-//                case 4:
-//                    if (currentImage != null) {
-//                        currentImage = SimplePPMProcessor.rotatePPMRight(currentImage);
-//                        System.out.println(currentImage); // Покажете промененото състояние
-//                    }
-//                    break;
-//                case 5:
-//                    if (currentImage != null) {
-//                        System.out.print("Въведете име на новия файл за запазване: ");
-//                        String newFilename = scanner.nextLine();
-//                        SimplePPMProcessor.saveImage(currentImage, newFilename);
-//                        System.out.println("Изображението е запазено като " + newFilename);
-//                    } else {
-//                        System.out.println("Няма текущи промени за запазване.");
-//                    }
-//                    break;
-//                case 6:
-//                    return;
-//                default:
-//                    System.out.println("Невалидна опция. Моля, опитайте отново.");
-//            }
-//        }
-//    }
-//    private static void pgmFileManipulationMenu(Scanner scanner) {
-//        while (true) {
-//            System.out.println("\nМеню за манипулация на PGM файлове:");
-//            System.out.println("1. Четене на PGM файл");
-//            System.out.println("2. Създаване на PGM файл");
-//            System.out.println("3. Направете отрицателен цвят на PGM");
-//            System.out.println("4. Завъртете PGM на дясно");
-//            System.out.println("5. Завъртете PGM на наляво");
-//            System.out.println("6. Запазете промените в нов файл");
-//            System.out.println("7. Назад към главното меню");
-//            System.out.print("Изберете опция: ");
-//
-//            int choice = scanner.nextInt();
-//            scanner.nextLine(); // Почиства новия ред след числото
-//
-//            switch (choice) {
-//                case 1:
-//                    System.out.print("Въведете име на файл за четене: ");
-//                    String filenameRead = scanner.nextLine();
-//                    currentImage = SimplePGMProcessor.readPGMAsString(filenameRead);
-//                    System.out.println(currentImage); // Покажете началното състояние на изображението
-//                    break;
-//                case 2:
-//                    break;
-//                case 3:
-//                    if (currentImage != null) {
-//                        currentImage = SimplePGMProcessor.makeNegativeP2String(currentImage);
-//                        System.out.println(currentImage); // Покажете промененото състояние
-//                    }
-//                    break;
-//                case 4:
-//                    if (currentImage != null) {
-//                        currentImage = SimplePGMProcessor.rotatePGMRight(currentImage);
-//                        System.out.println(currentImage); // Покажете промененото състояние
-//                    }
-//                    break;
-//                case 5:
-//                    if (currentImage != null) {
-//                        currentImage = SimplePGMProcessor.rotatePGMLeft(currentImage);
-//                        System.out.println(currentImage); // Покажете промененото състояние
-//                    }
-//                    break;
-//                case 6:
-//                    if (currentImage != null) {
-//                        System.out.print("Въведете име на новия файл за запазване: ");
-//                        String newFilename = scanner.nextLine();
-//                        SimplePGMProcessor.saveImage(currentImage, newFilename);
-//                        System.out.println("Изображението е запазено като " + newFilename);
-//                    } else {
-//                        System.out.println("Няма текущи промени за запазване.");
-//                    }
-//                    break;
-//                case 7:
-//                    return;
-//                default:
-//                    System.out.println("Невалидна опция. Моля, опитайте отново.");
-//            }
-//        }
-//    }
-//}

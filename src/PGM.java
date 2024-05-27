@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class PBM extends NetFile {
+public class PGM extends NetFile {
 
-    private char[][] pixels;
+    private int[][] pixels;
 
-    public PBM(String name, String location) {
-        super(name, Extension.PBM.toString(), location);
+    public PGM(String name, String location) {
+        super(name, Extension.PGM.toString(), location);
         initializePixels();
     }
 
@@ -18,15 +18,20 @@ public class PBM extends NetFile {
         String[] lines = this.getCurrentContent().split("\n");
         int height = getHeight();
         int width = getWidth();
-        pixels = new char[height][width];
-        int pixelRow = 0;
+        pixels = new int[height][width];
+        int lineIndex = 0;
 
-        for (String line : lines) {
-            if (!line.isEmpty() && !line.startsWith("P") && !line.startsWith("#") && !line.matches("\\d+ \\d+")) {
-                char[] linePixels = line.replace(" ", "").toCharArray();
-                System.arraycopy(linePixels, 0, pixels[pixelRow], 0, width);
-                pixelRow++;
+        int pixelRow = 0;
+        for (int i = lineIndex; i < lines.length; i++) {
+            String[] linePixels = lines[i].trim().split("\\s+");
+            int pixelCol = 0;
+            for (String pixel : linePixels) {
+                if (!pixel.isEmpty()) {
+                    pixels[pixelRow][pixelCol] = Integer.parseInt(pixel);
+                    pixelCol++;
+                }
             }
+            pixelRow++;
         }
     }
 
@@ -34,7 +39,7 @@ public class PBM extends NetFile {
     public void rotateLeft() {
         int height = getHeight();
         int width = getWidth();
-        char[][] newPixels = new char[width][height];
+        int[][] newPixels = new int[width][height];
 
         // Завъртване наляво
         for (int row = 0; row < width; row++) {
@@ -56,7 +61,7 @@ public class PBM extends NetFile {
     public void rotateRight() {
         int height = getHeight();
         int width = getWidth();
-        char[][] newPixels = new char[width][height];
+        int[][] newPixels = new int[width][height];
 
         // Завъртване надясно
         for (int row = 0; row < width; row++) {
@@ -82,7 +87,7 @@ public class PBM extends NetFile {
         // Превръщане на данните в негатив
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                pixels[i][j] = (pixels[i][j] == '0') ? '1' : '0';
+                pixels[i][j] = getMaxColorValue() - pixels[i][j];
             }
         }
 
@@ -92,21 +97,32 @@ public class PBM extends NetFile {
 
     @Override
     public void makeGrayscale() {
-        // PBM форматът вече е в черно-бяло, така че този метод може да остане празен или да хвърля изключение
-        System.out.println("Файлът " + getName() + " не поддържа градации на сивото.");
+        // PGM форматът вече е в градации на сивото, така че този метод може да остане празен или да хвърля изключение
+        System.out.println("Файлът " + getName() + " вече е в градации на сивото.");
     }
 
     @Override
     public void makeMonochrome() {
-        // PBM форматът вече е в монохром, така че този метод може да остане празен или да хвърля изключение
-        System.out.println("Файлът " + getName() + " вече е монохромен.");
+        int height = getHeight();
+        int width = getWidth();
+        int threshold = getMaxColorValue() / 2; // Праг за конвертиране в монохром
+
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                pixels[i][j] = (pixels[i][j] > threshold) ? getMaxColorValue() : 0;
+            }
+        }
+
+        // Обновяване на съдържанието
+        updateCurrentContent();
     }
 
     @Override
     public void save(String name) {
         try (PrintWriter pw = new PrintWriter(new FileWriter(name))) {
-            pw.print("P1\n"); // PBM format identifier
+            pw.print("P2\n"); // PGM format identifier
             pw.print(getWidth() + " " + getHeight() + "\n");
+            pw.print(getMaxColorValue() + "\n");
             for (int i = 0; i < getHeight(); i++) {
                 for (int j = 0; j < getWidth(); j++) {
                     pw.print(pixels[i][j] + " ");
@@ -117,7 +133,6 @@ public class PBM extends NetFile {
             System.out.println("Възникна грешка при записването на файла: " + e.getMessage());
         }
     }
-
 
 
     @Override
