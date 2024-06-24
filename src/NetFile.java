@@ -6,8 +6,8 @@ import java.util.Stack;
 public abstract class NetFile implements INetFile {
     private String name;
     private String extension;
-    private String location;
     private int maxColorValue;
+    private String location;
     public Stack<OperationType> operations;
 
     private int height;
@@ -181,10 +181,8 @@ public abstract class NetFile implements INetFile {
     }
 
     public abstract void rotateLeft();
-
     public abstract void rotateRight();
 
-    public abstract void makeNegative();
 
     public abstract void makeGrayscale();
 
@@ -196,4 +194,66 @@ public abstract class NetFile implements INetFile {
 
 
     public abstract void updateCurrentContent();
+
+    public String getInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("Файл: ").append(getName()).append("\n");
+        info.append("Операции: ").append(operations.toString()).append("\n");
+        return info.toString();
+    }
+    protected void updateCurrentContent(int[][] pixels) {
+        StringBuilder newImageData = new StringBuilder();
+
+        for (int i = 0; i < pixels.length; i++) {
+            for (int j = 0; j < pixels[i].length; j++) {
+                newImageData.append(pixels[i][j]).append(' ');
+            }
+            newImageData.append('\n');
+        }
+
+        setCurrentContent(newImageData.toString());
+    }
+    protected int[][] initializePixels(String currentContent, int height, int width) {
+        String[] lines = currentContent.split("\n");
+        int[][] pixels = new int[height][width];
+        int pixelRow = 0;
+
+        for (String line : lines) {
+            if (!line.isEmpty() && !line.startsWith("P") && !line.startsWith("#") && !line.matches("\\d+ \\d+")) {
+                String[] linePixels = line.trim().split("\\s+");
+                int pixelCol = 0;
+                for (String pixel : linePixels) {
+                    if (!pixel.isEmpty()) {
+                        pixels[pixelRow][pixelCol] = Integer.parseInt(pixel);
+                        pixelCol++;
+                    }
+                }
+                pixelRow++;
+            }
+        }
+        return pixels;
+    }
+    protected int[][] rotateLeft(int[][] pixels, int height, int width) {
+        int[][] newPixels = new int[width][height];
+
+        for (int row = 0; row < width; row++) {
+            for (int col = 0; col < height; col++) {
+                newPixels[row][col] = pixels[col][width - row - 1];
+            }
+        }
+
+        return newPixels;
+    }
+
+    protected int[][] rotateRight(int[][] pixels, int height, int width) {
+        int[][] newPixels = new int[width][height];
+
+        for (int row = 0; row < width; row++) {
+            for (int col = 0; col < height; col++) {
+                newPixels[row][col] = pixels[height - col - 1][row];
+            }
+        }
+
+        return newPixels;
+    }
 }

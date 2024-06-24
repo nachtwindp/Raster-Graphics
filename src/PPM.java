@@ -14,11 +14,8 @@ public class PPM extends NetFile {
     @Override
     public void initializePixels() {
         String[] lines = this.getCurrentContent().split("\n");
-        int height = getHeight();
-        int width = getWidth();
-        pixels = new int[height][width][3]; // Триизмерен масив за RGB стойностите
+        pixels = new int[getHeight()][getWidth()][3]; // Триизмерен масив за RGB стойностите
         int lineIndex = 0;
-
         // Прочитане на пикселните данни
         int pixelRow = 0;
         int pixelCol = 0;
@@ -33,7 +30,7 @@ public class PPM extends NetFile {
                     if (colorIndex == 3) {
                         colorIndex = 0;
                         pixelCol++;
-                        if (pixelCol == width) {
+                        if (pixelCol == getWidth()) {
                             pixelCol = 0;
                             pixelRow++;
                         }
@@ -45,20 +42,18 @@ public class PPM extends NetFile {
 
     @Override
     public void rotateLeft() {
-        int height = getHeight();
-        int width = getWidth();
-        int[][][] newPixels = new int[width][height][3];
+        int[][][] newPixels = new int[getWidth()][getHeight()][3];
 
         // Завъртване наляво
-        for (int row = 0; row < width; row++) {
-            for (int col = 0; col < height; col++) {
-                newPixels[row][col] = pixels[col][width - row - 1];
+        for (int row = 0; row < getWidth(); row++) {
+            for (int col = 0; col < getHeight(); col++) {
+                newPixels[row][col] = pixels[col][getWidth() - row - 1];
             }
         }
 
         // Обновяване на височината и ширината
-        setWidth(height);
-        setHeight(width);
+        setWidth(getHeight());
+        setHeight(getWidth());
         pixels = newPixels;
 
         // Обновяване на съдържанието
@@ -67,20 +62,18 @@ public class PPM extends NetFile {
 
     @Override
     public void rotateRight() {
-        int height = getHeight();
-        int width = getWidth();
-        int[][][] newPixels = new int[width][height][3];
+        int[][][] newPixels = new int[getWidth()][getHeight()][3];
 
         // Завъртване надясно
-        for (int row = 0; row < width; row++) {
-            for (int col = 0; col < height; col++) {
-                newPixels[row][col] = pixels[height - col - 1][row];
+        for (int row = 0; row < getWidth(); row++) {
+            for (int col = 0; col < getHeight(); col++) {
+                newPixels[row][col] = pixels[getHeight() - col - 1][row];
             }
         }
 
         // Обновяване на височината и ширината
-        setWidth(height);
-        setHeight(width);
+        setWidth(getHeight());
+        setHeight(getWidth());
         pixels = newPixels;
 
         // Обновяване на съдържанието
@@ -89,12 +82,9 @@ public class PPM extends NetFile {
 
     @Override
     public void makeNegative() {
-        int height = getHeight();
-        int width = getWidth();
-
         // Превръщане на данните в негатив
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
+        for (int i = 0; i < getHeight(); i++) {
+            for (int j = 0; j < getWidth(); j++) {
                 pixels[i][j][0] = getMaxColorValue() - pixels[i][j][0]; // Червен канал
                 pixels[i][j][1] = getMaxColorValue() - pixels[i][j][1]; // Зелен канал
                 pixels[i][j][2] = getMaxColorValue() - pixels[i][j][2]; // Син канал
@@ -107,12 +97,9 @@ public class PPM extends NetFile {
 
     @Override
     public void makeGrayscale() {
-        int height = getHeight();
-        int width = getWidth();
-
         // Превръщане на данните в градации на сивото
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
+        for (int i = 0; i < getHeight(); i++) {
+            for (int j = 0; j < getWidth(); j++) {
                 int grayValue = (pixels[i][j][0] + pixels[i][j][1] + pixels[i][j][2]) / 3;
                 pixels[i][j][0] = grayValue; // Червен канал
                 pixels[i][j][1] = grayValue; // Зелен канал
@@ -126,12 +113,10 @@ public class PPM extends NetFile {
 
     @Override
     public void makeMonochrome() {
-        int height = getHeight();
-        int width = getWidth();
         int threshold = getMaxColorValue() / 2; // Праг за конвертиране в монохром
 
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
+        for (int i = 0; i < getHeight(); i++) {
+            for (int j = 0; j < getWidth(); j++) {
                 int grayValue = (pixels[i][j][0] + pixels[i][j][1] + pixels[i][j][2]) / 3;
                 int monochromeValue = (grayValue > threshold) ? getMaxColorValue() : 0;
                 pixels[i][j][0] = monochromeValue; // Червен канал
@@ -173,12 +158,5 @@ public class PPM extends NetFile {
         setCurrentContent(newImageData.toString());
     }
 
-    @Override
-    public String getInfo() {
-        StringBuilder info = new StringBuilder();
-        info.append("Файл: ").append(getName()).append("\n");
-        info.append("Път: ").append(getLocation()).append("\n");
-        info.append("Операции: ").append(operations.toString()).append("\n");
-        return info.toString();
-    }
+
 }

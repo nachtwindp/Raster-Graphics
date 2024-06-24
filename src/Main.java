@@ -1,6 +1,5 @@
 import java.util.*;
 
-
 public class Main {
     private static Scanner scanner = new Scanner(System.in);
 
@@ -8,45 +7,49 @@ public class Main {
         HashMap<String, Session> sessions = new HashMap<>();
         String current_session_id = null;
 
-        while (true) {
-            System.out.println("\nМеню:");
-            System.out.println("1. Създай нова сесия и зареди файл (load <image>)");
-            System.out.println("2. Добави файл към текущата сесия (add <image>)");
-            System.out.println("3. Завърти файловете в сегашната сесия наляво (rotate left)");
-            System.out.println("4. Завърти файловете в сегашната сесия надясно (rotate right)");
-            System.out.println("5. Превърни файловете в негатив (negative)");
-            System.out.println("6. Превърни файловете в монохром (monochrome)");
-            System.out.println("7. Превърни файловете в сив оттенък (grayscale)");
-            System.out.println("8. Запази файловете (save <prefix>)");
-            System.out.println("9. Показване на информация за сесията (info)");
-            System.out.println("10. Създай колаж (collage <direction> <image1> <image2> <outimage>)");
-            System.out.println("11. Отмени последната операция (undo)");
-            System.out.println("12. Смени сесията (switch)");
-            System.out.println("13. Изведи всички създадени сесии (printsession)");
-            System.out.println("14. Изход (exit)");
-            System.out.print("Изберете опция: ");
+        System.out.println("Program Raster Graphics started");
+        System.out.println("Type 'help' for command display");
 
+        while (true) {
             String[] params = scanner.nextLine().split(" ");
             OperationType operationType = OperationType.IDLE;
 
             if (params[0].equals("rotate") && params.length > 1) {
                 operationType = OperationType.get(params[0] + " " + params[1]);
-            }
-            else if (params[0].equals("collage") && params.length > 4)
-            {
-                Session.collageImages(params[1], params[params.length - 1], Arrays.copyOfRange(params, 2, params.length - 1));
+            } else if (params[0].equals("collage") && params.length >= 5) {
+                if (current_session_id != null) {
+                    String direction = params[1];
+                    String outimage = params[params.length - 1];
+                    String[] imagePaths = Arrays.copyOfRange(params, 2, params.length - 1);
+                    sessions.get(current_session_id).createCollage(direction, outimage, imagePaths);
+                } else {
+                    System.out.println("Няма активна сесия.");
+                }
                 continue;
-            }
-            else if (params[0].equals("switch") && params.length > 1)
-            {
+            } else if (params[0].equals("switch") && params.length > 1) {
                 operationType = OperationType.get(params[0]);
-            }
-            else
-            {
+            } else {
                 operationType = OperationType.get(params[0]);
             }
 
             switch (operationType) {
+                case HELP:
+                    System.out.println("1. Създай нова сесия и зареди файл (load <image>)");
+                    System.out.println("2. Добави файл към текущата сесия (add <image>)");
+                    System.out.println("3. Завърти файловете в сегашната сесия наляво (rotate left)");
+                    System.out.println("4. Завърти файловете в сегашната сесия надясно (rotate right)");
+                    System.out.println("5. Превърни файловете в негатив (negative)");
+                    System.out.println("6. Превърни файловете в монохром (monochrome)");
+                    System.out.println("7. Превърни файловете в сив оттенък (grayscale)");
+                    System.out.println("8. Запази файловете (save <prefix>)");
+                    System.out.println("9. Показване на информация за сесията (info)");
+                    System.out.println("10. Създай колаж (collage <direction> <image1> <image2> <outimage>)");
+                    System.out.println("11. Отмени последната операция (undo)");
+                    System.out.println("12. Смени сесията (switch <session_id>)");
+                    System.out.println("13. Изведи всички създадени сесии (printsession)");
+                    System.out.println("14. Изход (exit)");
+                    break;
+
                 case OPEN_FILE:
                     try {
                         if (params.length > 1) {
@@ -55,13 +58,13 @@ public class Main {
                             sessions.put(current_session_id, newSession);
                             newSession.openFile(params[1]);
                             System.out.println("Сесия с ID: " + current_session_id + " стартирана.");
+                            System.out.println("Image " + params[1] + " added");
                         } else {
                             System.out.println("Моля, въведете валидно име на файл.");
                         }
-                    }catch (Error e)
-                    {
+                    } catch (Error e) {
                         sessions.remove(current_session_id);
-                        if(!sessions.isEmpty())
+                        if (!sessions.isEmpty())
                             current_session_id = sessions.get(0).uuid;
                         else
                             current_session_id = null;
@@ -70,7 +73,8 @@ public class Main {
                     break;
                 case ADD_FILE:
                     if (params.length > 1 && current_session_id != null) {
-                        sessions.get(current_session_id).openFile(params[1]);
+                        INetFile addedFile = sessions.get(current_session_id).openFile(params[1]);
+                        System.out.println("Image " + addedFile.getName() + " added");
                     } else {
                         System.out.println("Моля, въведете валидно име на файл или стартирайте сесия.");
                     }
@@ -132,32 +136,28 @@ public class Main {
                     }
                     break;
                 case SWITCH:
-                    if (current_session_id != null)
-                    {
+                    if (params.length > 1) {
                         String searched_session = params[1].trim();
-                        if (sessions.containsKey(searched_session))
-                        {
+                        if (sessions.containsKey(searched_session)) {
                             current_session_id = searched_session;
                             System.out.println("Сесията е сменена на " + current_session_id);
-                        }
-                        else {
+                        } else {
                             System.out.println("Няма такава сесия");
                         }
+                    } else {
+                        System.out.println("Моля, въведете валиден session_id.");
                     }
                     break;
                 case PRINTSESSION:
-                    if(current_session_id != null)
-                    {
+                    if (!sessions.isEmpty()) {
                         System.out.println("Текущи сесии:");
-                        sessions.forEach((key, value) -> { System.out.println(key + " "); });
-                    }
-                    else
-                    {
+                        sessions.forEach((key, value) -> System.out.println(key + " "));
+                    } else {
                         System.out.println("Няма активни сесии");
                     }
                     break;
                 case EXIT:
-                    System.out.println("Изход от програмата.");
+                    System.out.println("Exiting the program...");
                     scanner.close();
                     return;
                 case IDLE:

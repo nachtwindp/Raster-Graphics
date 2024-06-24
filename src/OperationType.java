@@ -13,7 +13,8 @@ public enum OperationType {
     INFO,
     UNDO,
     SWITCH,
-    PRINTSESSION;
+    PRINTSESSION,
+    HELP;
 
     public static OperationType get(String operationStr) {
         switch (operationStr.toLowerCase()) {
@@ -45,6 +46,8 @@ public enum OperationType {
                 return OperationType.PRINTSESSION;
             case "exit":
                 return OperationType.EXIT;
+            case "help":
+                return OperationType.HELP;
             default:
                 return OperationType.IDLE;
         }
